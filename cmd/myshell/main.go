@@ -48,7 +48,6 @@ func main() {
 				for _, executable := range executableDirs {
 					dirEntries, err := os.ReadDir(executable)
 					if err != nil {
-						fmt.Println(err)
 						continue
 					}
 					for _, dirEntry := range dirEntries {
