@@ -17,11 +17,13 @@ const (
 	echoCmd = "echo"
 	typeCmd = "type"
 	pwdCmd  = "pwd"
+	cdCmd   = "cd"
 )
 
-var allCmds = []string{exitCmd, echoCmd, typeCmd, pwdCmd}
+var builtIns = []string{exitCmd, echoCmd, typeCmd, pwdCmd, cdCmd}
 
 func main() {
+	curDir := os.Getenv("PWD")
 	// Uncomment this block to pass the first stage
 	for true {
 		fmt.Fprint(os.Stdout, "$ ")
@@ -39,7 +41,7 @@ func main() {
 		case echoCmd:
 			fmt.Println(strings.Join(args, " "))
 		case typeCmd:
-			if slices.Contains(allCmds, args[0]) {
+			if slices.Contains(builtIns, args[0]) {
 				fmt.Printf("%s is a shell builtin\n", args[0])
 			} else {
 				if path, err := exec.LookPath(args[0]); err == nil {
@@ -49,12 +51,13 @@ func main() {
 				}
 			}
 		case pwdCmd:
-			dir, err := os.Getwd()
-			if err != nil {
-				fmt.Println("pwd: error getting current directory")
-			} else {
-				fmt.Println(dir)
+			fmt.Println(curDir)
+		case cdCmd:
+			if _, err := os.ReadDir(args[0]); err != nil {
+				fmt.Printf("%s: %s: no such file or directory\n", command, args[0])
+				continue
 			}
+			curDir = args[0]
 		default:
 			c := exec.Command(command, args...)
 			c.Stderr = os.Stderr
