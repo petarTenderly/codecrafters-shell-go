@@ -11,7 +11,8 @@ import (
 var _ = fmt.Fprint
 
 const (
-	ExitCmd = "exit 0"
+	exitCmd = "exit"
+	echoCmd = "echo"
 )
 
 func main() {
@@ -22,12 +23,23 @@ func main() {
 		// Wait for user input
 		rawCmd, _ := bufio.NewReader(os.Stdin).ReadString('\n')
 		cmd := strings.TrimSpace(rawCmd)
-		switch cmd {
-		case ExitCmd:
-			os.Exit(0)
+		command, arg, found := strings.Cut(cmd, " ")
+		if !found {
+			fmt.Printf("%s: command not found\n", cmd)
+			continue
+		}
+		switch command {
+		case exitCmd:
+			if arg == "0" {
+				os.Exit(0)
+			}
+			fmt.Println("exit: status code must be 0")
+		case echoCmd:
+			fmt.Println(arg)
+		default:
+			fmt.Printf("%s: command not found\n", cmd)
 		}
 
-		fmt.Printf("%s: command not found\n", cmd)
 	}
 
 }
