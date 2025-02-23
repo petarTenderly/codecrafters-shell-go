@@ -22,24 +22,27 @@ func main() {
 
 		// Wait for user input
 		rawCmd, _ := bufio.NewReader(os.Stdin).ReadString('\n')
-		cmd := strings.TrimSpace(rawCmd)
-		command, arg, found := strings.Cut(cmd, " ")
-		if !found {
-			fmt.Printf("%s: command not found\n", cmd)
-			continue
-		}
+		command, args := parseCmd(rawCmd)
 		switch command {
 		case exitCmd:
-			if arg == "0" {
+			if args[0] == "0" {
 				os.Exit(0)
 			}
 			fmt.Println("exit: status code must be 0")
 		case echoCmd:
-			fmt.Println(arg)
+			fmt.Println(args)
 		default:
-			fmt.Printf("%s: command not found\n", cmd)
+			fmt.Printf("%s: command not found\n", strings.TrimSpace(rawCmd))
 		}
 
 	}
 
+}
+
+func parseCmd(rawCmd string) (string, []string) {
+	cmd := strings.TrimSpace(rawCmd)
+	cmdParts := strings.Split(cmd, " ")
+	command := cmdParts[0]
+	args := cmdParts[1:]
+	return command, args
 }
