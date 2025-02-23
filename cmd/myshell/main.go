@@ -19,7 +19,7 @@ const (
 	pwdCmd  = "pwd"
 )
 
-var allCmds = []string{exitCmd, echoCmd, typeCmd}
+var allCmds = []string{exitCmd, echoCmd, typeCmd, pwdCmd}
 
 func main() {
 	// Uncomment this block to pass the first stage
