@@ -27,6 +27,7 @@ func main() {
 		// Wait for user input
 		rawCmd, _ := bufio.NewReader(os.Stdin).ReadString('\n')
 		command, args := parseCmd(rawCmd)
+
 		switch command {
 		case exitCmd:
 			if args[0] == "0" {
@@ -39,7 +40,31 @@ func main() {
 			if slices.Contains(allCmds, args[0]) {
 				fmt.Printf("%s is a shell builtin\n", args[0])
 			} else {
-				fmt.Printf("%s: not found\n", args[0])
+
+				path := os.Getenv("PATH")
+				executableDirs := strings.Split(path, ":")
+				isFound := false
+
+				for _, executable := range executableDirs {
+					dirEntries, err := os.ReadDir(executable)
+					if err != nil {
+						fmt.Println(err)
+						continue
+					}
+					for _, dirEntry := range dirEntries {
+						if dirEntry.Name() == args[0] {
+							fmt.Printf("%s is %s/%s\n", args[0], executable, args[0])
+							isFound = true
+							return
+						}
+					}
+					if isFound {
+						break
+					}
+				}
+				if !isFound {
+					fmt.Printf("%s: not found\n", args[0])
+				}
 			}
 		default:
 			fmt.Printf("%s: command not found\n", strings.TrimSpace(rawCmd))
