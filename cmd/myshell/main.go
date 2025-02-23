@@ -16,6 +16,7 @@ const (
 	exitCmd = "exit"
 	echoCmd = "echo"
 	typeCmd = "type"
+	pwdCmd  = "pwd"
 )
 
 var allCmds = []string{exitCmd, echoCmd, typeCmd}
@@ -46,6 +47,13 @@ func main() {
 				} else {
 					fmt.Printf("%s: not found\n", args[0])
 				}
+			}
+		case pwdCmd:
+			dir, err := os.Getwd()
+			if err != nil {
+				fmt.Println("pwd: error getting current directory")
+			} else {
+				fmt.Println(dir)
 			}
 		default:
 			c := exec.Command(command, args...)
