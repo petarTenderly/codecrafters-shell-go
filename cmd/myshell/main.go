@@ -57,7 +57,11 @@ func main() {
 			}
 			fmt.Println(dir)
 		case cdCmd:
-			err := os.Chdir(args[0])
+			dir := args[0]
+			if args[0] == "~" {
+				dir = os.Getenv("HOME")
+			}
+			err := os.Chdir(dir)
 			if err != nil {
 				fmt.Printf("cd: %s: No such file or directory\n", args[0])
 			}
