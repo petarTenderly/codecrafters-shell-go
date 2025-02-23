@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"os/exec"
 	"slices"
 	"strings"
 )
@@ -40,28 +41,10 @@ func main() {
 			if slices.Contains(allCmds, args[0]) {
 				fmt.Printf("%s is a shell builtin\n", args[0])
 			} else {
-
-				path := os.Getenv("PATH")
-				executableDirs := strings.Split(path, ":")
-				isFound := false
-
-				for _, executable := range executableDirs {
-					dirEntries, err := os.ReadDir(executable)
-					if err != nil {
-						continue
-					}
-					for _, dirEntry := range dirEntries {
-						if dirEntry.Name() == args[0] {
-							fmt.Printf("%s is %s/%s\n", args[0], executable, args[0])
-							isFound = true
-						}
-					}
-					if isFound {
-						break
-					}
-				}
-				if !isFound {
-					fmt.Printf("%s: not found\n", args[0])
+				if path, err := exec.LookPath(args[0]); err == nil {
+					fmt.Printf("%s is %s\n", command, path)
+				} else {
+					fmt.Printf("%s: not found\n", command)
 				}
 			}
 		default:
