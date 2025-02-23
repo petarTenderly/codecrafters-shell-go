@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"slices"
@@ -48,6 +49,22 @@ func main() {
 				}
 			}
 		default:
+			if path, err := exec.LookPath(command); err == nil {
+				cmd := exec.Command(path, args...)
+				pipe, _ := cmd.StdoutPipe()
+				if err := cmd.Start(); err != nil {
+					log.Fatal(err)
+				}
+				reader := bufio.NewReader(pipe)
+				line, err := reader.ReadString('\n')
+				for err == nil {
+					fmt.Print(line)
+					line, err = reader.ReadString('\n')
+				}
+				_ = cmd.Wait()
+				continue
+			}
+
 			fmt.Printf("%s: command not found\n", strings.TrimSpace(rawCmd))
 		}
 
