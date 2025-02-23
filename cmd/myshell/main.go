@@ -54,7 +54,6 @@ func main() {
 						if dirEntry.Name() == args[0] {
 							fmt.Printf("%s is %s/%s\n", args[0], executable, args[0])
 							isFound = true
-							return
 						}
 					}
 					if isFound {
