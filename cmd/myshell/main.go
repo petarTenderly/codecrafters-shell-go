@@ -51,13 +51,17 @@ func main() {
 				}
 			}
 		case pwdCmd:
-			fmt.Println(curDir)
-		case cdCmd:
-			if _, err := os.ReadDir(args[0]); err != nil {
-				fmt.Printf("%s: %s: No such file or directory\n", command, args[0])
-				continue
+			dir, err := os.Getwd()
+			if err != nil {
+				fmt.Println("error reading working directory")
+				return
 			}
-			curDir = args[0]
+			fmt.Println(dir)
+		case cdCmd:
+			err := os.Chdir(args[0])
+			if err != nil {
+				fmt.Printf("cd: %s: No such file or directory\n", args[0])
+			}
 		default:
 			c := exec.Command(command, args...)
 			c.Stderr = os.Stderr
