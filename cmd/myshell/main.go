@@ -49,8 +49,8 @@ func main() {
 				}
 			}
 		default:
-			if path, err := exec.LookPath(command); err == nil {
-				cmd := exec.Command(path, args...)
+			if _, err := exec.LookPath(command); err == nil {
+				cmd := exec.Command(command, args...)
 				pipe, _ := cmd.StdoutPipe()
 				if err := cmd.Start(); err != nil {
 					log.Fatal(err)
