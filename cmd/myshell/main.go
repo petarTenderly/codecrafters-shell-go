@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 )
 
@@ -13,7 +14,10 @@ var _ = fmt.Fprint
 const (
 	exitCmd = "exit"
 	echoCmd = "echo"
+	typeCmd = "type"
 )
+
+var allCmds = []string{exitCmd, echoCmd, typeCmd}
 
 func main() {
 	// Uncomment this block to pass the first stage
@@ -31,6 +35,12 @@ func main() {
 			fmt.Println("exit: status code must be 0")
 		case echoCmd:
 			fmt.Println(args)
+		case typeCmd:
+			if slices.Contains(allCmds, args[0]) {
+				fmt.Printf("%s is a shell builtin\n", args[0])
+			} else {
+				fmt.Printf("%s: command not found\n", strings.TrimSpace(rawCmd))
+			}
 		default:
 			fmt.Printf("%s: command not found\n", strings.TrimSpace(rawCmd))
 		}
