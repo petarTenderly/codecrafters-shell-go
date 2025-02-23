@@ -34,7 +34,7 @@ func main() {
 			}
 			fmt.Println("exit: status code must be 0")
 		case echoCmd:
-			fmt.Println(args)
+			fmt.Println(strings.Join(args, " "))
 		case typeCmd:
 			if slices.Contains(allCmds, args[0]) {
 				fmt.Printf("%s is a shell builtin\n", args[0])
