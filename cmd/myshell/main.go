@@ -23,7 +23,6 @@ const (
 var builtIns = []string{exitCmd, echoCmd, typeCmd, pwdCmd, cdCmd}
 
 func main() {
-	curDir := os.Getenv("PWD")
 	// Uncomment this block to pass the first stage
 	for true {
 		fmt.Fprint(os.Stdout, "$ ")
