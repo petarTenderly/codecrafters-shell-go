@@ -54,7 +54,7 @@ func main() {
 			fmt.Println(curDir)
 		case cdCmd:
 			if _, err := os.ReadDir(args[0]); err != nil {
-				fmt.Printf("%s: %s: no such file or directory\n", command, args[0])
+				fmt.Printf("%s: %s: No such file or directory\n", command, args[0])
 				continue
 			}
 			curDir = args[0]
