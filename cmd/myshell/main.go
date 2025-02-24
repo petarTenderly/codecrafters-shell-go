@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"regexp"
 	"slices"
 	"strings"
 )
@@ -81,8 +82,36 @@ func main() {
 
 func parseCmd(rawCmd string) (string, []string) {
 	cmd := strings.TrimSpace(rawCmd)
-	cmdParts := strings.Split(cmd, " ")
-	command := cmdParts[0]
-	args := cmdParts[1:]
-	return command, args
+	//cmdParts := strings.Split(cmd, " ")
+	//
+	//command := cmdParts[0]
+	//args := cmdParts[1:]
+	//return command, args
+
+	// Regular expression to capture the command and arguments
+	re := regexp.MustCompile(`(\w+)\s+((?:'[^']*'|\S+)(?:\s+(?:'[^']*'|\S+))*)`)
+
+	// Match the input string
+	matches := re.FindStringSubmatch(cmd)
+
+	// Extract the command and arguments
+	command := matches[1]
+	argumentsString := matches[2]
+
+	// Split the arguments into a list
+	arguments := parseArguments(argumentsString)
+
+	return command, arguments
+}
+
+func parseArguments(argumentsString string) []string {
+	// Use a regex to match either single-quoted strings or non-whitespace sequences
+	re := regexp.MustCompile(`'([^']*)'|\S+`)
+	args := re.FindAllString(argumentsString, -1)
+	realArgs := make([]string, len(args))
+	for i, arg := range args {
+		// Remove the single quotes from the matched strings
+		realArgs[i] = strings.ReplaceAll(arg, "'", "")
+	}
+	return realArgs
 }
