@@ -137,6 +137,9 @@ func parseArguments(argumentsString string) []string {
 		}
 		i++
 	}
+	if len(argumentsString) > 0 {
+		arguments = append(arguments, argumentsString)
+	}
 
 	return arguments
 }
