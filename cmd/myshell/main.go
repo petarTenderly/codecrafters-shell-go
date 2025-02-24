@@ -97,6 +97,10 @@ func parseCmd(rawCmd string) (string, []string) {
 
 	// Extract the command and arguments
 	command := matches[1]
+	// unary command
+	if len(matches) == 2 {
+		return command, []string{}
+	}
 	argumentsString := matches[2]
 
 	// Split the arguments into a list
