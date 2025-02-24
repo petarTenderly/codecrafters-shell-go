@@ -105,7 +105,7 @@ func parseCmd(rawCmd string) (string, []string) {
 func parseArguments(argumentsString string) []string {
 	arguments := make([]string, 0)
 
-	for i := 0; i < len(argumentsString); i++ {
+	for i := 0; i < len(argumentsString); {
 		if argumentsString[i] == ' ' {
 			arguments = append(arguments, argumentsString[:i])
 			argumentsString = argumentsString[i+1:]
@@ -126,14 +126,15 @@ func parseArguments(argumentsString string) []string {
 			i = 0
 			continue
 		}
-		if argumentsString[i] == 47 {
+		if argumentsString[i] == '\\' {
 			argumentsString = argumentsString[:i] + argumentsString[i+1:]
-			i += 1
+			i++
 			continue
 		}
 		if i == len(argumentsString)-1 {
 			arguments = append(arguments, argumentsString)
 		}
+		i++
 	}
 
 	return arguments
