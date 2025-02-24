@@ -83,6 +83,7 @@ func main() {
 func parseCmd(rawCmd string) (string, []string) {
 	cmd := strings.TrimSpace(rawCmd)
 	cmd = strings.ReplaceAll(cmd, "''", "")
+	cmd = strings.ReplaceAll(cmd, "\"\"", "")
 	//cmdParts := strings.Split(cmd, " ")
 	//
 	//command := cmdParts[0]
@@ -90,8 +91,7 @@ func parseCmd(rawCmd string) (string, []string) {
 	//return command, args
 
 	// Regular expression to capture the command and arguments
-	re := regexp.MustCompile(`(\w+)(?:\s+((?:'[^']*'|\S+)(?:\s+(?:'[^']*'|\S+))*))?`)
-	// Match the input string
+	re := regexp.MustCompile(`(\w+)(?:\s+((?:'[^']*'|"[^"]*"|\S+)(?:\s+(?:'[^']*'|"[^"]*"|\S+))*))?`) // Match the input string
 	matches := re.FindStringSubmatch(cmd)
 
 	// Extract the command and arguments
@@ -106,12 +106,13 @@ func parseCmd(rawCmd string) (string, []string) {
 
 func parseArguments(argumentsString string) []string {
 	// Use a regex to match either single-quoted strings or non-whitespace sequences
-	re := regexp.MustCompile(`'([^']*)'|\S+`)
+	re := regexp.MustCompile(`'[^']*'|"[^"]*"|\S+`)
 	args := re.FindAllString(argumentsString, -1)
 	realArgs := make([]string, len(args))
 	for i, arg := range args {
 		// Remove the single quotes from the matched strings
 		realArgs[i] = strings.ReplaceAll(arg, "'", "")
+		realArgs[i] = strings.ReplaceAll(realArgs[i], "\"", "")
 	}
 	return realArgs
 }
