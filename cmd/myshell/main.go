@@ -111,8 +111,8 @@ func parseArguments(argumentsString string) []string {
 	realArgs := make([]string, len(args))
 	for i, arg := range args {
 		// Remove the single quotes from the matched strings
-		realArgs[i] = strings.ReplaceAll(arg, "'", "")
-		realArgs[i] = strings.ReplaceAll(realArgs[i], "\"", "")
+		realArgs[i] = strings.Trim(arg, "'")
+		realArgs[i] = strings.Trim(arg, "\"")
 	}
 	return realArgs
 }
