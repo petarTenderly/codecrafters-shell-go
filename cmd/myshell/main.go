@@ -82,8 +82,6 @@ func main() {
 
 func parseCmd(rawCmd string) (string, []string) {
 	cmd := strings.TrimSpace(rawCmd)
-	cmd = strings.ReplaceAll(cmd, "''", "")
-	cmd = strings.ReplaceAll(cmd, "\"\"", "")
 	//cmdParts := strings.Split(cmd, " ")
 	//
 	//command := cmdParts[0]
@@ -105,14 +103,38 @@ func parseCmd(rawCmd string) (string, []string) {
 }
 
 func parseArguments(argumentsString string) []string {
-	// Use a regex to match either single-quoted strings or non-whitespace sequences
-	re := regexp.MustCompile(`'[^']*'|"[^"]*"|\S+`)
-	args := re.FindAllString(argumentsString, -1)
-	realArgs := make([]string, len(args))
-	for i, arg := range args {
-		// Remove the single quotes from the matched strings
-		realArgs[i] = strings.Trim(arg, "'")
-		realArgs[i] = strings.Trim(realArgs[i], "\"")
+	arguments := make([]string, 0)
+
+	for i := 0; i < len(argumentsString); i++ {
+		if argumentsString[i] == ' ' {
+			arguments = append(arguments, argumentsString[:i])
+			argumentsString = argumentsString[i+1:]
+			i = 0
+			continue
+		}
+		if argumentsString[i] == '"' {
+			closingQuote := strings.Index(argumentsString[i+1:], "\"")
+			arguments = append(arguments, argumentsString[i+1:i+closingQuote+1])
+			argumentsString = argumentsString[i+closingQuote+2:]
+			i = 0
+			continue
+		}
+		if argumentsString[i] == '\'' {
+			closingQuote := strings.Index(argumentsString[i+1:], "'")
+			arguments = append(arguments, argumentsString[i+1:i+closingQuote+1])
+			argumentsString = argumentsString[i+closingQuote+2:]
+			i = 0
+			continue
+		}
+		if argumentsString[i] == 47 {
+			argumentsString = argumentsString[:i] + argumentsString[i+1:]
+			i += 1
+			continue
+		}
+		if i == len(argumentsString)-1 {
+			arguments = append(arguments, argumentsString)
+		}
 	}
-	return realArgs
+
+	return arguments
 }
