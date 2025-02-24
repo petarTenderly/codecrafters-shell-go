@@ -82,6 +82,7 @@ func main() {
 
 func parseCmd(rawCmd string) (string, []string) {
 	cmd := strings.TrimSpace(rawCmd)
+	cmd = strings.ReplaceAll(cmd, "''", "")
 	//cmdParts := strings.Split(cmd, " ")
 	//
 	//command := cmdParts[0]
