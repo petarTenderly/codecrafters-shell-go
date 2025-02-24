@@ -115,7 +115,6 @@ func parseArguments(argumentsString string) []string {
 		if argumentsString[i] == '"' {
 			closingQuote := strings.Index(argumentsString[i+1:], "\"")
 			newString := argumentsString[i+1 : i+closingQuote+2]
-			newString = strings.ReplaceAll(newString, "\\", "")
 			arguments = append(arguments, newString)
 			argumentsString = argumentsString[i+closingQuote+2:]
 			i = 0
@@ -125,7 +124,6 @@ func parseArguments(argumentsString string) []string {
 		if argumentsString[i] == '\'' {
 			closingQuote := strings.Index(argumentsString[i+1:], "'")
 			newString := argumentsString[i+1 : i+closingQuote+2]
-			newString = strings.ReplaceAll(newString, "\\", "")
 			arguments = append(arguments, newString)
 			argumentsString = argumentsString[i+closingQuote+2:]
 			i = 0
