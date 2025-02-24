@@ -129,16 +129,11 @@ func parseArguments(argumentsString string) []string {
 		}
 		if argumentsString[i] == '\\' {
 			argumentsString = argumentsString[:i] + argumentsString[i+1:]
-			i++
-			continue
 		}
 		if i == len(argumentsString)-1 {
 			arguments = append(arguments, argumentsString)
 		}
 		i++
-	}
-	if len(argumentsString) > 0 {
-		arguments = append(arguments, argumentsString)
 	}
 
 	return arguments
