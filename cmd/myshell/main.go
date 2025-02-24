@@ -119,6 +119,7 @@ func parseArguments(argumentsString string) []string {
 			i = 0
 			continue
 		}
+
 		if argumentsString[i] == '\'' {
 			closingQuote := strings.Index(argumentsString[i+1:], "'")
 			arguments = append(arguments, argumentsString[i+1:i+closingQuote+2])
