@@ -74,8 +74,10 @@ func main() {
 			c := exec.Command(command, arguments...)
 			c.Stderr = os.Stderr
 			c.Stdout = os.Stdout
-			_ = c.Run()
-
+			err := c.Run()
+			if err != nil {
+				fmt.Printf("%s: command not found\n", command)
+			}
 		}
 
 	}
