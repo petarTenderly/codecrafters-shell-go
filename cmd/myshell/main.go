@@ -30,74 +30,76 @@ func main() {
 
 		// Wait for user input
 		rawCmd, _ := bufio.NewReader(os.Stdin).ReadString('\n')
-		command, args := parseCmd(rawCmd)
-
-		switch command {
-		case exitCmd:
-			if args[0] == "0" {
-				os.Exit(0)
-			}
-			fmt.Println("exit: status code must be 0")
-		case echoCmd:
-
-			fmt.Println(strings.Join(args, " "))
-		case typeCmd:
-			if slices.Contains(builtIns, args[0]) {
-				fmt.Printf("%s is a shell builtin\n", args[0])
-			} else {
-				if path, err := exec.LookPath(args[0]); err == nil {
-					fmt.Printf("%s is %s\n", args[0], path)
-				} else {
-					fmt.Printf("%s: not found\n", args[0])
-				}
-			}
-		case pwdCmd:
-			dir, err := os.Getwd()
-			if err != nil {
-				fmt.Println("error reading working directory")
-				return
-			}
-			fmt.Println(dir)
-		case cdCmd:
-			dir := args[0]
-			if args[0] == "~" {
-				dir = os.Getenv("HOME")
-			}
-			err := os.Chdir(dir)
-			if err != nil {
-				fmt.Printf("cd: %s: No such file or directory\n", args[0])
-			}
-		default:
-			for i, arg := range args {
-				args[i] = strings.ReplaceAll(arg, "\n", "\\n")
-			}
-			c := exec.Command(command, args...)
-			c.Stderr = os.Stderr
-			c.Stdout = os.Stdout
-			err := c.Run()
-			if err != nil {
-				fmt.Printf("%s: command not found\n", command)
-			}
-		}
-
+		command := parseCmd(rawCmd)
+		command.exec()
 	}
 
 }
 
-func parseCmd(rawCmd string) (string, []string) {
+type Command struct {
+	Name   string
+	Args   []string
+	Output string
+}
+
+func (command Command) exec() {
+	switch command.Name {
+	case exitCmd:
+		if command.Args[0] == "0" {
+			os.Exit(0)
+		}
+		fmt.Println("exit: status code must be 0")
+	case echoCmd:
+
+		fmt.Println(strings.Join(command.Args, " "))
+	case typeCmd:
+		if slices.Contains(builtIns, command.Args[0]) {
+			fmt.Printf(fmt.Sprintf("%s is a shell builtin\n", command.Args[0]))
+		} else {
+			if path, err := exec.LookPath(command.Args[0]); err == nil {
+				fmt.Printf(fmt.Sprintf("%s is %s\n", command.Args[0], path))
+			} else {
+				fmt.Printf(fmt.Sprintf("%s: not found\n", command.Args[0]))
+			}
+		}
+	case pwdCmd:
+		dir, err := os.Getwd()
+		if err != nil {
+			fmt.Println("error reading working directory")
+		}
+		fmt.Println(dir)
+	case cdCmd:
+		dir := command.Args[0]
+		if command.Args[0] == "~" {
+			dir = os.Getenv("HOME")
+		}
+		err := os.Chdir(dir)
+		if err != nil {
+			fmt.Printf(("cd: %s: No such file or directory\n"), command.Args[0])
+		}
+	default:
+		for i, arg := range command.Args {
+			command.Args[i] = strings.ReplaceAll(arg, "\n", "\\n")
+		}
+		c := exec.Command(command.Name, command.Args...)
+		c.Stdout = os.Stdout
+		c.Stderr = os.Stderr
+		err := c.Run()
+		if err != nil {
+			fmt.Printf("%s: command not found\n", command.Name)
+		}
+	}
+
+}
+
+func parseCmd(rawCmd string) Command {
 	cmd := strings.TrimSpace(rawCmd)
-	//split := strings.SplitN(cmd, " ", 2)
-	//Extract the command and arguments
-	//command := split[0]
-	//if len(split) == 1 {
-	//	return command, []string{}
-	//}
-	//argumentsString := split[1]
-
-	// Split the arguments into a list
 	arguments := resolveArguments(cmd)
-
-	return arguments[0], arguments[1:]
+	return Command{
+		Name:   arguments[0],
+		Args:   arguments[1:],
+		Output: "",
+	}
 }
 
 func resolveArguments(argument string) []string {
