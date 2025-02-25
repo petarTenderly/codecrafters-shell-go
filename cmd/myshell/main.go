@@ -67,7 +67,11 @@ func main() {
 				fmt.Printf("cd: %s: No such file or directory\n", args[0])
 			}
 		default:
-			c := exec.Command(command, args...)
+			arguments := append([]string{command}, args...)
+			for i, arg := range arguments {
+				arguments[i] = strings.ReplaceAll(arg, `\n`, `\\n`)
+			}
+			c := exec.Command(command, arguments...)
 			c.Stderr = os.Stderr
 			c.Stdout = os.Stdout
 			err := c.Run()
@@ -114,8 +118,7 @@ func parseArguments(argumentsString string) []string {
 		}
 		if argumentsString[i] == '"' {
 			closingQuote := strings.Index(argumentsString[i+1:], "\"")
-			newString := argumentsString[i+1 : i+closingQuote+2]
-			newString = strings.ReplaceAll(newString, `\n`, `n`)
+			newString := argumentsString[i+1 : i+closingQuote+1]
 			arguments = append(arguments, newString)
 			argumentsString = argumentsString[i+closingQuote+2:]
 			i = 0
@@ -124,8 +127,7 @@ func parseArguments(argumentsString string) []string {
 
 		if argumentsString[i] == '\'' {
 			closingQuote := strings.Index(argumentsString[i+1:], "'")
-			newString := argumentsString[i+1 : i+closingQuote+2]
-			newString = strings.ReplaceAll(newString, `\n`, `n`)
+			newString := argumentsString[i+1 : i+closingQuote+1]
 			arguments = append(arguments, newString)
 			argumentsString = argumentsString[i+closingQuote+2:]
 			i = 0
