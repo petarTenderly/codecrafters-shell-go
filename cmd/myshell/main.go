@@ -86,18 +86,18 @@ func main() {
 
 func parseCmd(rawCmd string) (string, []string) {
 	cmd := strings.TrimSpace(rawCmd)
-	split := strings.SplitN(cmd, " ", 2)
-	// Extract the command and arguments
-	command := split[0]
-	if len(split) == 1 {
-		return command, []string{}
-	}
-	argumentsString := split[1]
+	//split := strings.SplitN(cmd, " ", 2)
+	//Extract the command and arguments
+	//command := split[0]
+	//if len(split) == 1 {
+	//	return command, []string{}
+	//}
+	//argumentsString := split[1]
 
 	// Split the arguments into a list
-	arguments := resolveArguments(argumentsString)
+	arguments := resolveArguments(cmd)
 
-	return command, arguments
+	return arguments[0], arguments[1:]
 }
 
 func resolveArguments(argument string) []string {
