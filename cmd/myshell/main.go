@@ -72,12 +72,14 @@ func main() {
 				arguments[i] = strings.ReplaceAll(arg, "\n", "\\n")
 			}
 			c := exec.Command(command, arguments...)
-			c.Stderr = os.Stderr
-			c.Stdout = os.Stdout
-			err := c.Run()
+
+			output, err := c.CombinedOutput()
 			if err != nil {
 				fmt.Printf("%s: command not found\n", command)
+			} else {
+				fmt.Printf("%s", output)
 			}
+
 		}
 
 	}
