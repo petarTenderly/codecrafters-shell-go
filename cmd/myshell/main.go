@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/golang-collections/collections/stack"
 	"os"
 	"os/exec"
 	"slices"
@@ -38,6 +39,7 @@ func main() {
 			}
 			fmt.Println("exit: status code must be 0")
 		case echoCmd:
+
 			fmt.Println(strings.Join(args, " "))
 		case typeCmd:
 			if slices.Contains(builtIns, args[0]) {
@@ -84,63 +86,110 @@ func main() {
 
 func parseCmd(rawCmd string) (string, []string) {
 	cmd := strings.TrimSpace(rawCmd)
-	//cmdParts := strings.Split(cmd, " ")
-	//
-	//command := cmdParts[0]
-	//args := cmdParts[1:]
-	//return command, args
 	split := strings.SplitN(cmd, " ", 2)
 	// Extract the command and arguments
-	command := string(split[0])
+	command := split[0]
 	if len(split) == 1 {
 		return command, []string{}
 	}
-	argumentsString := string(split[1])
+	argumentsString := split[1]
 
 	// Split the arguments into a list
-	arguments := parseArguments(argumentsString)
+	arguments := resolveArguments(argumentsString)
 
 	return command, arguments
 }
 
-func parseArguments(argumentsString string) []string {
-	arguments := make([]string, 0)
-	argumentsString = strings.ReplaceAll(argumentsString, "\"\"", "")
-	argumentsString = strings.ReplaceAll(argumentsString, "''", "")
+func resolveArguments(argument string) []string {
+	sb := strings.Builder{}
+	s := stack.New()
+	argList := make([]string, 0)
 
-	for i := 0; i < len(argumentsString); {
-		argumentsString = strings.TrimSpace(argumentsString)
-		if argumentsString[i] == ' ' {
-			arguments = append(arguments, argumentsString[:i])
-			argumentsString = argumentsString[i+1:]
-			i = 0
+	for i := 0; i < len(argument); {
+		// strongest rule is to ignore special chars when we have quotes unless
+		if s.Peek() == uint8(39) {
+			if argument[i] == '\'' {
+				s.Pop()
+				i++
+				continue
+			}
+			sb.WriteByte(argument[i])
+			i++
 			continue
+			// logic when in single quotas
 		}
-		if argumentsString[i] == '"' {
-			closingQuote := strings.Index(argumentsString[i+1:], "\"")
-			newString := argumentsString[i+1 : i+closingQuote+1]
-			arguments = append(arguments, newString)
-			argumentsString = argumentsString[i+closingQuote+2:]
-			i = 0
+		//double quotes
+		if s.Peek() == uint8(34) {
+			if argument[i] == '"' {
+				s.Pop()
+				i++
+				continue
+			}
+			specRunes := []uint8{34, 92, 36}
+			if argument[i] == '\\' && i+2 < len(argument) {
+				if slices.Contains(specRunes, argument[i+1]) {
+					sb.WriteByte(argument[i+1])
+					i += 2
+					continue
+				}
+			}
+			sb.WriteByte(argument[i])
+			i++
 			continue
 		}
 
-		if argumentsString[i] == '\'' {
-			closingQuote := strings.Index(argumentsString[i+1:], "'")
-			newString := argumentsString[i+1 : i+closingQuote+1]
-			arguments = append(arguments, newString)
-			argumentsString = argumentsString[i+closingQuote+2:]
-			i = 0
+		if argument[i] == '\'' || argument[i] == '"' {
+			if s.Peek() == argument[i] {
+				s.Pop()
+			} else {
+				s.Push(argument[i])
+			}
+			i++
 			continue
 		}
-		if argumentsString[i] == '\\' {
-			argumentsString = argumentsString[:i] + argumentsString[i+1:]
+
+		// when we are in single column then we just append the char
+
+		if s.Peek() == nil {
+			// new line not in quotes, this is new argument
+			if argument[i] == ' ' {
+				argList = append(argList, sb.String())
+				sb = strings.Builder{}
+				i++
+				// and we need to skip all lines
+				for argument[i] == ' ' {
+					i++
+				}
+				continue
+			}
+
+			if argument[i] == '\\' {
+				// we need to skip this char and add next char
+				i++
+				if i < len(argument) {
+					sb.WriteByte(argument[i])
+				}
+				i++
+				continue
+			}
+
+			//we need to add special char if there is escape char
+			sb.WriteByte(argument[i])
+			i++
+
+			continue
 		}
-		if i == len(argumentsString)-1 {
-			arguments = append(arguments, argumentsString)
-		}
-		i++
+
 	}
 
-	return arguments
+	// we need to add last argument if command is not finished with space
+	if sb.Len() > 0 {
+		argList = append(argList, sb.String())
+
+	}
+	return argList
 }
+
+//func main() {
+//	fmt.Printf(resolveArguments("hello'script'\\n'world"))
+//}
