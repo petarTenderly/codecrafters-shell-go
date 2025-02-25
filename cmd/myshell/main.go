@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"regexp"
 	"slices"
 	"strings"
 )
@@ -90,14 +89,13 @@ func parseCmd(rawCmd string) (string, []string) {
 	//command := cmdParts[0]
 	//args := cmdParts[1:]
 	//return command, args
-
-	// Regular expression to capture the command and arguments
-	re := regexp.MustCompile(`(\w+)(?:\s+((?:'[^']*'|"[^"]*"|\S+)(?:\s+(?:'[^']*'|"[^"]*"|\S+))*))?`) // Match the input string
-	matches := re.FindStringSubmatch(cmd)
-
+	split := strings.SplitN(cmd, " ", 2)
 	// Extract the command and arguments
-	command := matches[1]
-	argumentsString := matches[2]
+	command := string(split[0])
+	if len(split) == 1 {
+		return command, []string{}
+	}
+	argumentsString := string(split[1])
 
 	// Split the arguments into a list
 	arguments := parseArguments(argumentsString)
@@ -107,6 +105,8 @@ func parseCmd(rawCmd string) (string, []string) {
 
 func parseArguments(argumentsString string) []string {
 	arguments := make([]string, 0)
+	argumentsString = strings.ReplaceAll(argumentsString, "\"\"", "")
+	argumentsString = strings.ReplaceAll(argumentsString, "''", "")
 
 	for i := 0; i < len(argumentsString); {
 		argumentsString = strings.TrimSpace(argumentsString)
