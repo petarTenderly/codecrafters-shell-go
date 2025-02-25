@@ -70,15 +70,12 @@ func main() {
 			arguments := append([]string{command}, args...)
 			for i, arg := range arguments {
 				arguments[i] = strings.ReplaceAll(arg, "\n", "\\n")
-				//	arguments[i] = strings.ReplaceAll(arg, `\'`, `\\'`)
 			}
 			c := exec.Command(command, arguments...)
 			c.Stderr = os.Stderr
 			c.Stdout = os.Stdout
-			err := c.Run()
-			if err != nil {
-				fmt.Printf("%s: command not found\n", command)
-			}
+			_ = c.Run()
+
 		}
 
 	}
