@@ -67,19 +67,16 @@ func main() {
 				fmt.Printf("cd: %s: No such file or directory\n", args[0])
 			}
 		default:
-			arguments := append([]string{command}, args...)
-			for i, arg := range arguments {
-				arguments[i] = strings.ReplaceAll(arg, "\n", "\\n")
+			for i, arg := range args {
+				args[i] = strings.ReplaceAll(arg, "\n", "\\n")
 			}
-			c := exec.Command(command, arguments...)
-
-			output, err := c.CombinedOutput()
+			c := exec.Command(command, args...)
+			c.Stderr = os.Stderr
+			c.Stdout = os.Stdout
+			err := c.Run()
 			if err != nil {
 				fmt.Printf("%s: command not found\n", command)
-			} else {
-				fmt.Printf("%s", output)
 			}
-
 		}
 
 	}
@@ -112,6 +109,7 @@ func parseArguments(argumentsString string) []string {
 	arguments := make([]string, 0)
 
 	for i := 0; i < len(argumentsString); {
+		argumentsString = strings.TrimSpace(argumentsString)
 		if argumentsString[i] == ' ' {
 			arguments = append(arguments, argumentsString[:i])
 			argumentsString = argumentsString[i+1:]
