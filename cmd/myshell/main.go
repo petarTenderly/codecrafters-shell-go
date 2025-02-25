@@ -70,7 +70,7 @@ func main() {
 			arguments := append([]string{command}, args...)
 			for i, arg := range arguments {
 				arguments[i] = strings.ReplaceAll(arg, `\n`, `\\n`)
-				arguments[i] = strings.ReplaceAll(arg, `\'`, `\\'`)
+				//	arguments[i] = strings.ReplaceAll(arg, `\'`, `\\'`)
 			}
 			c := exec.Command(command, arguments...)
 			c.Stderr = os.Stderr
