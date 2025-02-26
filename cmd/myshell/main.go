@@ -42,30 +42,46 @@ type Command struct {
 	Output string
 }
 
+func (command Command) Print(s string) {
+	if command.Output == "" {
+		fmt.Printf(s)
+		return
+	}
+	f, err := os.Create(command.Output)
+	if err != nil {
+		fmt.Println("error creating file")
+	}
+	defer f.Close()
+
+	_, err = f.WriteString(s)
+	if err != nil {
+		fmt.Println("error writing to file")
+	}
+}
+
 func (command Command) exec() {
 	switch command.Name {
 	case exitCmd:
 		if command.Args[0] == "0" {
 			os.Exit(0)
 		}
-		fmt.Println("exit: status code must be 0")
+		command.Print("exit: status code must be 0\n")
 	case echoCmd:
-
-		fmt.Println(strings.Join(command.Args, " "))
+		command.Print(fmt.Sprintln(strings.Join(command.Args, " ")))
 	case typeCmd:
 		if slices.Contains(builtIns, command.Args[0]) {
-			fmt.Printf(fmt.Sprintf("%s is a shell builtin\n", command.Args[0]))
+			command.Print(fmt.Sprintf("%s is a shell builtin\n", command.Args[0]))
 		} else {
 			if path, err := exec.LookPath(command.Args[0]); err == nil {
-				fmt.Printf(fmt.Sprintf("%s is %s\n", command.Args[0], path))
+				command.Print(fmt.Sprintf("%s is %s\n", command.Args[0], path))
 			} else {
-				fmt.Printf(fmt.Sprintf("%s: not found\n", command.Args[0]))
+				command.Print(fmt.Sprintf("%s: not found\n", command.Args[0]))
 			}
 		}
 	case pwdCmd:
 		dir, err := os.Getwd()
 		if err != nil {
-			fmt.Println("error reading working directory")
+			command.Print("error reading working directory\n")
 		}
 		fmt.Println(dir)
 	case cdCmd:
@@ -75,7 +91,7 @@ func (command Command) exec() {
 		}
 		err := os.Chdir(dir)
 		if err != nil {
-			fmt.Printf(("cd: %s: No such file or directory\n"), command.Args[0])
+			command.Print(fmt.Sprintf("cd: %s: No such file or directory\n", command.Args[0]))
 		}
 	default:
 		for i, arg := range command.Args {
@@ -84,9 +100,17 @@ func (command Command) exec() {
 		c := exec.Command(command.Name, command.Args...)
 		c.Stdout = os.Stdout
 		c.Stderr = os.Stderr
+		if command.Output != "" {
+			f, err := os.Create(command.Output)
+			if err != nil {
+				command.Print("error creating file")
+			}
+			defer f.Close()
+			c.Stdout = f
+		}
 		err := c.Run()
 		if err != nil {
-			fmt.Printf("%s: command not found\n", command.Name)
+			command.Print(fmt.Sprintf("%s: command not found\n", command.Name))
 		}
 	}
 
@@ -94,11 +118,20 @@ func (command Command) exec() {
 
 func parseCmd(rawCmd string) Command {
 	cmd := strings.TrimSpace(rawCmd)
-	arguments := resolveArguments(cmd)
+	parts := resolveArguments(cmd)
+	arguments := parts[1:]
+	output := ""
+	if len(arguments) > 2 {
+		if arguments[len(arguments)-2] == ">" || arguments[len(arguments)-2] == "1>" {
+			output = arguments[len(arguments)-1]
+			arguments = arguments[:len(arguments)-2]
+		}
+	}
+
 	return Command{
-		Name:   arguments[0],
-		Args:   arguments[1:],
-		Output: "",
+		Name:   parts[0],
+		Args:   arguments,
+		Output: output,
 	}
 }
 
