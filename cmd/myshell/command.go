@@ -37,6 +37,22 @@ func NewCommand(parts []string) Command {
 				fmt.Println("error creating file")
 			}
 			arguments = arguments[:len(arguments)-2]
+		} else if arguments[len(arguments)-2] == ">>" || arguments[len(arguments)-2] == "1>>" {
+			fileName := arguments[len(arguments)-1]
+			var err error
+			output, err = os.OpenFile(fileName, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0666)
+			if err != nil {
+				fmt.Println("error creating file")
+			}
+			arguments = arguments[:len(arguments)-2]
+		} else if arguments[len(arguments)-2] == "2>>" {
+			fileName := arguments[len(arguments)-1]
+			var err error
+			errorOutput, err = os.OpenFile(fileName, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0666)
+			if err != nil {
+				fmt.Println("error creating file")
+			}
+			arguments = arguments[:len(arguments)-2]
 		}
 	}
 
