@@ -10,13 +10,15 @@ import (
 )
 
 type Command struct {
-	Name   string
-	Args   []string
-	Output *os.File
+	Name        string
+	Args        []string
+	Output      *os.File
+	ErrorOutput *os.File
 }
 
 func NewCommand(parts []string) Command {
 	output := os.Stdout
+	errorOutput := os.Stderr
 	arguments := parts[1:]
 	if len(parts) > 2 {
 		if arguments[len(arguments)-2] == ">" || arguments[len(arguments)-2] == "1>" {
@@ -27,13 +29,22 @@ func NewCommand(parts []string) Command {
 				fmt.Println("error creating file")
 			}
 			arguments = arguments[:len(arguments)-2]
+		} else if arguments[len(arguments)-2] == "2>" {
+			fileName := arguments[len(arguments)-1]
+			var err error
+			errorOutput, err = os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
+			if err != nil {
+				fmt.Println("error creating file")
+			}
+			arguments = arguments[:len(arguments)-2]
 		}
 	}
 
 	return Command{
-		Name:   parts[0],
-		Args:   arguments,
-		Output: output,
+		Name:        parts[0],
+		Args:        arguments,
+		Output:      output,
+		ErrorOutput: errorOutput,
 	}
 }
 
@@ -77,7 +88,7 @@ func (command Command) exec() {
 		}
 		c := exec.Command(command.Name, command.Args...)
 		c.Stdout = command.Output
-		c.Stderr = os.Stderr
+		c.Stderr = command.ErrorOutput
 		err := c.Run()
 		if err != nil {
 			if errors.Is(err, exec.ErrNotFound) {
