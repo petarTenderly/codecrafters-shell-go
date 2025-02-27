@@ -96,7 +96,7 @@ func autocomplete(input string) string {
 			}
 		}
 	}
-
+	fmt.Print("\a")
 	return ""
 }
 
