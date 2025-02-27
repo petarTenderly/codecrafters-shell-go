@@ -135,6 +135,8 @@ loop:
 	return
 }
 
+var tabPressed = 0
+
 func autocomplete(input string) string {
 	if strings.Contains(input, " ") {
 		//autocomplete arguments
@@ -150,10 +152,28 @@ func autocomplete(input string) string {
 				return cmd[len(input):]
 			}
 		}
+
+		listOfMatches := make([]string, 0)
 		for _, cmd := range allExecutables {
 			if strings.HasPrefix(cmd, input) {
-				return cmd[len(input):]
+				listOfMatches = append(listOfMatches, cmd)
 			}
+		}
+		if len(listOfMatches) == 1 {
+			tabPressed = 0
+			return listOfMatches[0][len(input):]
+		}
+		if len(listOfMatches) > 1 {
+			if tabPressed > 0 {
+				fmt.Print("\a")
+			}
+			tabPressed++
+
+			slices.Sort(listOfMatches)
+			fmt.Printf("\r\n%s\n\r", strings.Join(listOfMatches, "  "))
+			fmt.Print("$ ", input)
+
+			return ""
 		}
 	}
 	fmt.Print("\a")
