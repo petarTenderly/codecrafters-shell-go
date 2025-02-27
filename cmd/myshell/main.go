@@ -7,6 +7,7 @@ import (
 	"golang.org/x/term"
 	"io"
 	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 )
@@ -24,11 +25,65 @@ const (
 
 var builtIns = []string{exitCmd, echoCmd, typeCmd, pwdCmd, cdCmd}
 
-func isTab(input string) bool {
-	return strings.Contains(input, "\t")
+var allExecutables = make([]string, 0)
+
+func execList() {
+	// Get the PATH environment variable
+	pathEnv := os.Getenv("PATH")
+	if pathEnv == "" {
+		fmt.Println("PATH environment variable is not set")
+		return
+	}
+
+	// Split the PATH into individual directories
+	pathDirs := strings.Split(pathEnv, string(os.PathListSeparator))
+
+	// Iterate through each directory in PATH
+	for _, dir := range pathDirs {
+		// Open the directory
+		d, err := os.Open(dir)
+		if err != nil {
+			// If the directory cannot be opened, skip it
+			continue
+		}
+		defer d.Close()
+
+		// Read all files in the directory
+		files, err := d.Readdir(-1)
+		if err != nil {
+			continue
+		}
+
+		// Check each file to see if it is executable
+		for _, file := range files {
+			// Skip directories
+			if file.IsDir() {
+				continue
+			}
+
+			// Construct the full path to the file
+			fullPath := filepath.Join(dir, file.Name())
+
+			// Check if the file is executable
+			if isExecutable(fullPath) {
+				allExecutables = append(allExecutables, file.Name())
+			}
+		}
+	}
+}
+
+func isExecutable(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+
+	// Check if the file is executable by the user
+	return info.Mode().Perm()&0111 != 0
 }
 
 func main() {
+	execList()
 
 	// Uncomment this block to pass the first stage
 	for true {
@@ -91,6 +146,11 @@ func autocomplete(input string) string {
 		}
 	} else {
 		for _, cmd := range builtIns {
+			if strings.HasPrefix(cmd, input) {
+				return cmd[len(input):]
+			}
+		}
+		for _, cmd := range allExecutables {
 			if strings.HasPrefix(cmd, input) {
 				return cmd[len(input):]
 			}
