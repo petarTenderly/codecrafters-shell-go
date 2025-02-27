@@ -16,6 +16,8 @@ type Command struct {
 	ErrorOutput *os.File
 }
 
+var argumentList = make([]string, 0)
+
 func NewCommand(parts []string) Command {
 	output := os.Stdout
 	errorOutput := os.Stderr
@@ -55,7 +57,7 @@ func NewCommand(parts []string) Command {
 			arguments = arguments[:len(arguments)-2]
 		}
 	}
-
+	argumentList = append(argumentList, arguments...)
 	return Command{
 		Name:        parts[0],
 		Args:        arguments,

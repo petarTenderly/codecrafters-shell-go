@@ -81,11 +81,22 @@ loop:
 }
 
 func autocomplete(input string) string {
-	for _, cmd := range builtIns {
-		if strings.HasPrefix(cmd, input) {
-			return cmd[len(input):]
+	if strings.Contains(input, " ") {
+		//autocomplete arguments
+		lastArg := strings.Split(input, " ")[len(strings.Split(input, " "))-1]
+		for _, arg := range argumentList {
+			if strings.HasPrefix(arg, lastArg) {
+				return arg[len(input):]
+			}
+		}
+	} else {
+		for _, cmd := range builtIns {
+			if strings.HasPrefix(cmd, input) {
+				return cmd[len(input):]
+			}
 		}
 	}
+
 	return ""
 }
 
