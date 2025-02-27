@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/golang-collections/collections/stack"
+	"golang.org/x/term"
+	"io"
 	"os"
 	"slices"
 	"strings"
@@ -22,17 +24,69 @@ const (
 
 var builtIns = []string{exitCmd, echoCmd, typeCmd, pwdCmd, cdCmd}
 
+func isTab(input string) bool {
+	return strings.Contains(input, "\t")
+}
+
 func main() {
+
 	// Uncomment this block to pass the first stage
 	for true {
-		fmt.Fprint(os.Stdout, "$ ")
+		fmt.Fprint(os.Stdout, "\r$ ")
 
-		// Wait for user input
-		rawCmd, _ := bufio.NewReader(os.Stdin).ReadString('\n')
-		command := parseCmd(rawCmd)
+		r := bufio.NewReader(os.Stdin)
+		input := readInput(r)
+		command := parseCmd(input)
 		command.exec()
 	}
+}
 
+func readInput(rd io.Reader) (input string) {
+	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
+	if err != nil {
+		panic(err)
+	}
+	defer term.Restore(int(os.Stdin.Fd()), oldState)
+	r := bufio.NewReader(rd)
+loop:
+	for {
+		c, _, err := r.ReadRune()
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		switch c {
+		case '\x03': // Ctrl+C
+			os.Exit(0)
+		case '\r', '\n': // Enter
+			fmt.Fprint(os.Stdout, "\r\n")
+			break loop
+		case '\x7F': // Backspace
+			if length := len(input); length > 0 {
+				input = input[:length-1]
+				fmt.Fprint(os.Stdout, "\b \b")
+			}
+		case '\t': // Tab
+			suffix := autocomplete(input)
+			if suffix != "" {
+				input += suffix + " "
+				fmt.Fprint(os.Stdout, suffix+" ")
+			}
+		default:
+			input += string(c)
+			fmt.Fprint(os.Stdout, string(c))
+		}
+	}
+	return
+}
+
+func autocomplete(input string) string {
+	for _, cmd := range builtIns {
+		if strings.HasPrefix(cmd, input) {
+			return cmd[len(input):]
+		}
+	}
+	return ""
 }
 
 func parseCmd(rawCmd string) Command {
