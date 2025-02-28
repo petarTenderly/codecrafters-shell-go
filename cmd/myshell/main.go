@@ -66,10 +66,16 @@ func execList() {
 
 			// Check if the file is executable
 			if isExecutable(fullPath) {
+				if slices.Contains(allExecutables, file.Name()) {
+					continue
+				}
 				allExecutables = append(allExecutables, file.Name())
 			}
 		}
 	}
+
+	// make allExecutables with duplicate
+
 }
 
 func isExecutable(path string) bool {
@@ -124,8 +130,8 @@ loop:
 		case '\t': // Tab
 			suffix := autocomplete(input)
 			if suffix != "" {
-				input += suffix + " "
-				fmt.Fprint(os.Stdout, suffix+" ")
+				input += suffix
+				fmt.Fprint(os.Stdout, suffix)
 			}
 		default:
 			input += string(c)
@@ -143,13 +149,13 @@ func autocomplete(input string) string {
 		lastArg := strings.Split(input, " ")[len(strings.Split(input, " "))-1]
 		for _, arg := range argumentList {
 			if strings.HasPrefix(arg, lastArg) {
-				return arg[len(input):]
+				return arg[len(input):] + " "
 			}
 		}
 	} else {
 		for _, cmd := range builtIns {
 			if strings.HasPrefix(cmd, input) {
-				return cmd[len(input):]
+				return cmd[len(input):] + " "
 			}
 		}
 
@@ -161,14 +167,36 @@ func autocomplete(input string) string {
 		}
 		if len(listOfMatches) == 1 {
 			tabPressed = 0
-			return listOfMatches[0][len(input):]
+			return listOfMatches[0][len(input):] + " "
 		}
 		if len(listOfMatches) > 1 {
 			if tabPressed > 0 {
 				fmt.Print("\a")
 			}
-			tabPressed++
+			cursor := len(input)
+		loop1:
+			for true {
+				if cursor > len(listOfMatches[0]) {
+					break loop1
+				}
+				runeAtCursor := listOfMatches[0][cursor]
+				for _, match := range listOfMatches {
+					if cursor >= len(match) {
+						break loop1
+					}
+					if runeAtCursor != match[cursor] {
+						break loop1
+					}
 
+				}
+				cursor++
+			}
+
+			if cursor > len(input) {
+				tabPressed = 0
+				return listOfMatches[0][len(input):cursor]
+			}
+			tabPressed++
 			slices.Sort(listOfMatches)
 			fmt.Printf("\r\n%s\n\r", strings.Join(listOfMatches, "  "))
 			fmt.Print("$ ", input)
