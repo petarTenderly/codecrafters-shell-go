@@ -71,7 +71,7 @@ func (shell *Shell) autocomplete(input string) string {
 			cursor := len(input)
 		findCommonSuffix:
 			for {
-				if cursor > len(listOfMatches[0]) {
+				if cursor >= len(listOfMatches[0]) {
 					break findCommonSuffix
 				}
 				runeAtCursor := listOfMatches[0][cursor]
