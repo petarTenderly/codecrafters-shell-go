@@ -9,14 +9,24 @@ import (
 	"strings"
 )
 
+const (
+	exitCmd = "exit"
+	echoCmd = "echo"
+	typeCmd = "type"
+	pwdCmd  = "pwd"
+	cdCmd   = "cd"
+)
+
+var builtIns = []string{exitCmd, echoCmd, typeCmd, pwdCmd, cdCmd}
+
 type Command struct {
 	Name        string
 	Args        []string
 	Output      *os.File
 	ErrorOutput *os.File
-}
 
-var argumentList = make([]string, 0)
+	HandlerRegistry map[string]cmdHandler
+}
 
 func NewCommand(parts []string) Command {
 	output := os.Stdout
@@ -57,62 +67,87 @@ func NewCommand(parts []string) Command {
 			arguments = arguments[:len(arguments)-2]
 		}
 	}
-	argumentList = append(argumentList, arguments...)
+
+	handleRegistry := map[string]cmdHandler{
+		exitCmd: handleExit,
+		echoCmd: handleEcho,
+		typeCmd: handleType,
+		pwdCmd:  handlePwd,
+		cdCmd:   handleCd,
+	}
+
 	return Command{
-		Name:        parts[0],
-		Args:        arguments,
-		Output:      output,
-		ErrorOutput: errorOutput,
+		Name:            parts[0],
+		Args:            arguments,
+		Output:          output,
+		ErrorOutput:     errorOutput,
+		HandlerRegistry: handleRegistry,
 	}
 }
 
+type cmdHandler func(command Command)
+
 func (command Command) exec() {
-	switch command.Name {
-	case exitCmd:
-		if command.Args[0] == "0" {
-			os.Exit(0)
-		}
-		fmt.Fprintf(command.Output, "exit: status code must be 0\n")
-	case echoCmd:
-		fmt.Fprintf(command.Output, fmt.Sprintln(strings.Join(command.Args, " ")))
-	case typeCmd:
-		if slices.Contains(builtIns, command.Args[0]) {
-			fmt.Fprintf(command.Output, fmt.Sprintf("%s is a shell builtin\n", command.Args[0]))
-		} else {
-			if path, err := exec.LookPath(command.Args[0]); err == nil {
-				fmt.Fprintf(command.Output, fmt.Sprintf("%s is %s\n", command.Args[0], path))
-			} else {
-				fmt.Fprintf(command.Output, fmt.Sprintf("%s: not found\n", command.Args[0]))
-			}
-		}
-	case pwdCmd:
-		dir, err := os.Getwd()
-		if err != nil {
-			fmt.Fprintf(command.Output, "error reading working directory\n")
-		}
-		fmt.Println(dir)
-	case cdCmd:
-		dir := command.Args[0]
-		if command.Args[0] == "~" {
-			dir = os.Getenv("HOME")
-		}
-		err := os.Chdir(dir)
-		if err != nil {
-			fmt.Fprintf(command.Output, fmt.Sprintf("cd: %s: No such file or directory\n", command.Args[0]))
-		}
-	default:
-		for i, arg := range command.Args {
-			command.Args[i] = strings.ReplaceAll(arg, "\n", "\\n")
-		}
-		c := exec.Command(command.Name, command.Args...)
-		c.Stdout = command.Output
-		c.Stderr = command.ErrorOutput
-		err := c.Run()
-		if err != nil {
-			if errors.Is(err, exec.ErrNotFound) {
-				fmt.Fprintf(command.Output, "%s: command not found\n", command.Name)
-			}
+	if handler, ok := command.HandlerRegistry[command.Name]; ok {
+		handler(command)
+	} else {
+		handleExec(command)
+	}
+}
+
+func handleExec(command Command) {
+	for i, arg := range command.Args {
+		command.Args[i] = strings.ReplaceAll(arg, "\n", "\\n")
+	}
+	c := exec.Command(command.Name, command.Args...)
+	c.Stdout = command.Output
+	c.Stderr = command.ErrorOutput
+	err := c.Run()
+	if err != nil {
+		if errors.Is(err, exec.ErrNotFound) {
+			fmt.Fprintf(command.Output, "%s: command not found\n", command.Name)
 		}
 	}
+}
 
+func handleCd(command Command) {
+	dir := command.Args[0]
+	if command.Args[0] == "~" {
+		dir = os.Getenv("HOME")
+	}
+	err := os.Chdir(dir)
+	if err != nil {
+		fmt.Fprintf(command.Output, fmt.Sprintf("cd: %s: No such file or directory\n", command.Args[0]))
+	}
+}
+
+func handlePwd(command Command) {
+	dir, err := os.Getwd()
+	if err != nil {
+		fmt.Fprintf(command.Output, "error reading working directory\n")
+	}
+	fmt.Println(dir)
+}
+
+func handleType(command Command) {
+	if slices.Contains(builtIns, command.Args[0]) {
+		fmt.Fprintf(command.Output, fmt.Sprintf("%s is a shell builtin\n", command.Args[0]))
+	} else {
+		if path, err := exec.LookPath(command.Args[0]); err == nil {
+			fmt.Fprintf(command.Output, fmt.Sprintf("%s is %s\n", command.Args[0], path))
+		} else {
+			fmt.Fprintf(command.Output, fmt.Sprintf("%s: not found\n", command.Args[0]))
+		}
+	}
+}
+
+func handleEcho(command Command) {
+	fmt.Fprintf(command.Output, fmt.Sprintln(strings.Join(command.Args, " ")))
+}
+
+func handleExit(command Command) {
+	if command.Args[0] == "0" {
+		os.Exit(0)
+	}
+	fmt.Fprintf(command.Output, "exit: status code must be 0\n")
 }
