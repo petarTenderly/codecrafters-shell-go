@@ -15,6 +15,7 @@ type Shell struct {
 	executiveFiles  []string
 	argumentHistory []string
 	tabPressed      int
+	builtIns        []string
 }
 
 func NewShell() *Shell {
@@ -23,6 +24,7 @@ func NewShell() *Shell {
 		executiveFiles:  executiveFiles,
 		argumentHistory: make([]string, 0),
 		tabPressed:      0,
+		builtIns:        []string{exitCmd, echoCmd, typeCmd, pwdCmd, cdCmd},
 	}
 }
 
@@ -48,7 +50,7 @@ func (shell *Shell) autocomplete(input string) string {
 			}
 		}
 	} else {
-		for _, cmd := range builtIns {
+		for _, cmd := range shell.builtIns {
 			if strings.HasPrefix(cmd, input) {
 				return cmd[len(input):] + " "
 			}
@@ -150,13 +152,11 @@ loop:
 	return
 }
 
-var tabPressed = 0
-
 func (shell *Shell) parseCmd(rawCmd string) Command {
 	cmd := strings.TrimSpace(rawCmd)
 	parts := shell.resolveArguments(cmd)
 
-	return NewCommand(parts)
+	return NewCommand(parts, shell)
 }
 
 func (shell *Shell) resolveArguments(argument string) []string {

@@ -17,55 +17,43 @@ const (
 	cdCmd   = "cd"
 )
 
-var builtIns = []string{exitCmd, echoCmd, typeCmd, pwdCmd, cdCmd}
-
 type Command struct {
-	Name        string
-	Args        []string
-	Output      *os.File
-	ErrorOutput *os.File
-
+	Name            string
+	Args            []string
+	Output          *os.File
+	ErrorOutput     *os.File
 	HandlerRegistry map[string]cmdHandler
+	Shell           *Shell
 }
 
-func NewCommand(parts []string) Command {
+func NewCommand(parts []string, shell *Shell) Command {
+	const exeMod = 0666
+
 	output := os.Stdout
 	errorOutput := os.Stderr
 	arguments := parts[1:]
+
+	stdOutCmds := []string{">", "1>", ">>", "1>>"}
+	stdErrCmds := []string{"2>", "2>>"}
+
 	if len(parts) > 2 {
-		if arguments[len(arguments)-2] == ">" || arguments[len(arguments)-2] == "1>" {
+		redirectPosition := len(arguments) - 2
+		if slices.Contains(stdOutCmds, arguments[redirectPosition]) || slices.Contains(stdErrCmds, arguments[redirectPosition]) {
 			fileName := arguments[len(arguments)-1]
-			var err error
-			output, err = os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
-			if err != nil {
-				fmt.Println("error creating file")
+			openFlag := os.O_CREATE | os.O_WRONLY | os.O_TRUNC
+			if arguments[redirectPosition] == ">>" || arguments[redirectPosition] == "1>>" || arguments[redirectPosition] == "2>>" {
+				openFlag = os.O_APPEND | os.O_WRONLY | os.O_CREATE
 			}
-			arguments = arguments[:len(arguments)-2]
-		} else if arguments[len(arguments)-2] == "2>" {
-			fileName := arguments[len(arguments)-1]
-			var err error
-			errorOutput, err = os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
-			if err != nil {
-				fmt.Println("error creating file")
+			outputFile, _ := os.OpenFile(fileName, openFlag, exeMod)
+			if arguments[redirectPosition] == "2>" || arguments[redirectPosition] == "2>>" {
+				errorOutput = outputFile
+			} else {
+				output = outputFile
 			}
-			arguments = arguments[:len(arguments)-2]
-		} else if arguments[len(arguments)-2] == ">>" || arguments[len(arguments)-2] == "1>>" {
-			fileName := arguments[len(arguments)-1]
-			var err error
-			output, err = os.OpenFile(fileName, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0666)
-			if err != nil {
-				fmt.Println("error creating file")
-			}
-			arguments = arguments[:len(arguments)-2]
-		} else if arguments[len(arguments)-2] == "2>>" {
-			fileName := arguments[len(arguments)-1]
-			var err error
-			errorOutput, err = os.OpenFile(fileName, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0666)
-			if err != nil {
-				fmt.Println("error creating file")
-			}
-			arguments = arguments[:len(arguments)-2]
+
+			arguments = arguments[:redirectPosition]
 		}
+
 	}
 
 	handleRegistry := map[string]cmdHandler{
@@ -82,6 +70,7 @@ func NewCommand(parts []string) Command {
 		Output:          output,
 		ErrorOutput:     errorOutput,
 		HandlerRegistry: handleRegistry,
+		Shell:           shell,
 	}
 }
 
@@ -130,7 +119,7 @@ func handlePwd(command Command) {
 }
 
 func handleType(command Command) {
-	if slices.Contains(builtIns, command.Args[0]) {
+	if slices.Contains(command.Shell.builtIns, command.Args[0]) {
 		fmt.Fprintf(command.Output, fmt.Sprintf("%s is a shell builtin\n", command.Args[0]))
 	} else {
 		if path, err := exec.LookPath(command.Args[0]); err == nil {
